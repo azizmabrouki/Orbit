@@ -1,0 +1,28 @@
+# k3d cluster definition for Orbit's local, disposable single-node cluster.
+# Created by infrastructure/scripts/cluster-create.sh.
+# See ADR-0001 (local runtime) and ADR-0005 (bundled Traefik disabled).
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: orbit
+servers: 1
+agents: 0
+# K3s v1.36.5+k3s1 (stable channel). Docker tags use "-" instead of "+".
+image: rancher/k3s:v1.36.5-k3s1
+ports:
+  # Host port 80 -> k3d load balancer -> ServiceLB on the node.
+  - port: 80:80
+    nodeFilters:
+      - loadbalancer
+options:
+  k3s:
+    extraArgs:
+      # Traefik is installed through GitOps instead (ADR-0005). Every other
+      # K3s default stays on: ServiceLB, CoreDNS, local-path storage,
+      # metrics-server and the embedded NetworkPolicy controller.
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
